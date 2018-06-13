@@ -78,8 +78,6 @@ expect {
 }
 EOF
 
-	mysql -h${DBIP} -P${DBPort} -u${DBUser} -e "UPDATE mysql.user SET Password = PASSWORD('${DBPassword}') WHERE User = 'root'; FLUSH PRIVILEGES;"
-
 	echo "build cpp framework ...."
 	##Tars数据库环境初始化
 	mysql -h${DBIP} -P${DBPort} -u${DBUser} -p${DBPassword} -e "grant all on *.* to 'tars'@'%' identified by '${DBTarsPass}' with grant option;"
