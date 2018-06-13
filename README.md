@@ -1,5 +1,6 @@
 # Tencent Tars 的 一键安装 脚本
 
+* [约定](#约定)
 * [MySQL](#mysql)
 * [变量](#变量)
   * [TZ](#tz)
@@ -10,6 +11,12 @@
   * [MASTER](#master)
   * [框架普通基础服务](#框架普通基础服务)
 * [Docker镜像](#docker镜像)
+
+
+约定
+-----
+
+脚本均在**CentOS7**环境上运行。
 
 
 MySQL
