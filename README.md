@@ -45,7 +45,22 @@ DBPassword password
 
 
 ### INET_NAME
-缺省为 `eth0` 。如果是虚拟机或者多网卡机器，需要确定网卡名称，如果不是 `eth0`，那么需要设定**变量** `INET_NAME` 的值为主机网卡名称，例如 `ens160`。
+缺省为 `eth0` 。如果是虚拟机或者多网卡机器，需要确定网卡名称，如果不是 `eth0`，那么需要设定**变量** `INET_NAME` 的值为主机网卡名称。网卡名称可以使用命令 `ip address` 来获得，例如下面的输出，可以得到网卡名称为 `enp0s17`：
+```
+[root@localhost ~]# ip address
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: enp0s17: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 08:00:27:27:c7:14 brd ff:ff:ff:ff:ff:ff
+    inet 172.16.94.82/24 brd 172.16.94.255 scope global noprefixroute dynamic enp0s17
+       valid_lft 691174sec preferred_lft 691174sec
+    inet6 fe80::95bb:7d90:e353:253a/64 scope link noprefixroute 
+       valid_lft forever preferred_lft forever
+```
 
 
 ### 框架普通基础服务
