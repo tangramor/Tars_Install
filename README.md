@@ -6,9 +6,7 @@
   * [TZ](#tz)
   * [DBIP, DBPort, DBUser, DBPassword](#dbip-dbport-dbuser-dbpassword)
   * [DBTarsPass](#dbtarspass)
-  * [MOUNT_DATA](#mount_data)
   * [INET_NAME](#inet_name)
-  * [MASTER](#master)
   * [框架普通基础服务](#框架普通基础服务)
 * [Docker镜像](#docker镜像)
 
@@ -17,6 +15,8 @@
 -----
 
 脚本均在**CentOS7**环境上运行。
+
+在修改完脚本预设变量后，使用 `chmod u+x` 赋予脚本运行权限，然后运行即可。
 
 
 MySQL
