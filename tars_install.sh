@@ -15,31 +15,20 @@ MachineIp=$(ip addr | grep inet | grep ${INET_NAME} | awk '{print $2;}' | sed 's
 MachineName=$(cat /etc/hosts | grep ${MachineIp} | awk '{print $2}')
 
 build_cpp_framework(){
-	yum -y install https://repo.mysql.com/mysql80-community-release-el7-1.noarch.rpm
+	yum -y install https://repo.mysql.com/mysql-community-release-el7-7.noarch.rpm
 	yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 	yum -y install http://rpms.remirepo.net/enterprise/remi-release-7.rpm
-	yum -y install yum-utils && yum-config-manager --enable remi-php72
-	yum -y install git gcc gcc-c++ make wget cmake mysql-server mysql-devel unzip iproute which glibc-devel flex bison ncurses-devel zlib-devel kde-l10n-Chinese glibc-common hiredis-devel rapidjson-devel boost boost-devel redis php php-cli php-devel php-mcrypt php-cli php-gd php-curl php-mysql php-zip php-fileinfo php-phpiredis php-seld-phar-utils tzdata
+	yum -y install yum-utils
+	yum install -y git gcc gcc-c++ make wget cmake mysql-server mysql-devel unzip iproute which glibc-devel flex bison ncurses-devel zlib-devel kde-l10n-Chinese glibc-common expect
 	ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 	localedef -c -f UTF-8 -i zh_CN zh_CN.utf8
-	sed -i "s@;date.timezone =@date.timezone = ${TZ}@" /etc/php.ini
-	sed -i "s@AllowOverride None@AllowOverride All@g" /etc/httpd/conf/httpd.conf
-	wget -c -t 0 https://dev.mysql.com/get/Downloads/Connector-C++/mysql-connector-c++-8.0.11-linux-el7-x86-64bit.tar.gz
-	tar zxf mysql-connector-c++-8.0.11-linux-el7-x86-64bit.tar.gz && cd mysql-connector-c++-8.0.11-linux-el7-x86-64bit
-	cp -Rf include/jdbc/* /usr/include/mysql/ && cp -Rf include/mysqlx/* /usr/include/mysql/ && cp -Rf lib64/* /usr/lib64/mysql/
-	cd /root && rm -rf mysql-connector*
-	wget -c -t 0 https://github.com/Tencent/Tars/archive/phptars.zip -O phptars.zip
-	unzip -a phptars.zip && mv Tars-phptars Tars && rm -f /root/phptars.zip
+	wget -c -t 0 https://github.com/Tencent/Tars/archive/master.zip -O master.zip
+	unzip -a master.zip && mv Tars-master Tars && rm -f /root/master.zip
 	mkdir -p /usr/local/mysql && ln -s /usr/lib64/mysql /usr/local/mysql/lib && ln -s /usr/include/mysql /usr/local/mysql/include && echo "/usr/local/mysql/lib/" >> /etc/ld.so.conf && ldconfig
-	#cd /usr/local/mysql/lib/ && rm -f libmysqlclient.a && ln -s libmysqlclient.so.2? libmysqlclient.a
+	#cd /usr/local/mysql/lib/ && ln -s libmysqlclient.so.2? libmysqlclient.a
 	cd /root/Tars/cpp/thirdparty && wget -c -t 0 https://github.com/Tencent/rapidjson/archive/master.zip -O master.zip
 	unzip -a master.zip && mv rapidjson-master rapidjson && rm -f master.zip
 	mkdir -p /data && chmod u+x /root/Tars/cpp/build/build.sh
-	sed -i '11s/rt/rt crypto ssl/' /root/Tars/cpp/framework/CMakeLists.txt && sed -i '20s/5.1.14/8.0.11/' /root/Tars/web/pom.xml
-	sed -i '38 a\\t<jaxb-ap.version>2.3.0</jaxb-ap.version>' /root/Tars/web/pom.xml
-	sed -i '290 a\\t<dependency>\n\t\t<groupId>javax.xml.bind</groupId>\n\t\t<artifactId>jaxb-api</artifactId>\n\t\t<version>${jaxb-ap.version}</version>\n\t</dependency>' /root/Tars/web/pom.xml
-	sed -i '25s/org.gjt.mm.mysql.Driver/com.mysql.cj.jdbc.Driver/' /root/Tars/web/src/main/resources/conf-spring/spring-context-datasource.xml
-	sed -i '26s/convertToNull/CONVERT_TO_NULL/' /root/Tars/web/src/main/resources/conf-spring/spring-context-datasource.xml
 	cd /root/Tars/cpp/build/ && ./build.sh all
 	./build.sh install
 	cd /root/Tars/cpp/build/ && make framework-tar
@@ -47,20 +36,10 @@ build_cpp_framework(){
 	mkdir -p /usr/local/app/tars/ && cp /root/Tars/cpp/build/framework.tgz /usr/local/app/tars/ && cp /root/Tars/cpp/build/t*.tgz /root/
 	cd /usr/local/app/tars/ && tar xzfv framework.tgz && rm -rf framework.tgz
 	mkdir -p /usr/local/app/patchs/tars.upload
-	cd /tmp && wget -c -t 0 https://getcomposer.org/installer && php installer
-	chmod +x composer.phar && mv composer.phar /usr/local/bin/composer
-	cd /root/Tars/php/tars-extension/ && phpize --clean && phpize
-	./configure --enable-phptars --with-php-config=/usr/bin/php-config && make && make install
-	echo "extension=phptars.so" > /etc/php.d/phptars.ini
-	cd /root && wget -c -t 0 https://github.com/swoole/swoole-src/archive/v2.2.0.tar.gz
-	tar zxf v2.2.0.tar.gz && cd swoole-src-2.2.0 && phpize && ./configure && make && make install
-	echo "extension=swoole.so" > /etc/php.d/swoole.ini
-	cd /root && rm -rf v2.2.0.tar.gz swoole-src-2.2.0
-	mkdir -p /root/phptars && cp -f /root/Tars/php/tars2php/src/tars2php.php /root/phptars
 	mkdir -p /root/init && cd /root/init/
-	wget -c -t 0 --header "Cookie: oraclelicense=accept" -c --no-check-certificate http://download.oracle.com/otn-pub/java/jdk/10.0.1+10/fb4372174a714e6b8c52526dc134031e/jdk-10.0.1_linux-x64_bin.rpm
-	rpm -ivh /root/init/jdk-10.0.1_linux-x64_bin.rpm && rm -rf /root/init/jdk-10.0.1_linux-x64_bin.rpm
-	echo "export JAVA_HOME=/usr/java/jdk-10.0.1" >> /etc/profile
+	wget -c -t 0 --header "Cookie: oraclelicense=accept" -c --no-check-certificate http://download.oracle.com/otn-pub/java/jdk/8u172-b11/a58eab1ec242421181065cdc37240b08/jdk-8u172-linux-x64.rpm
+	rpm -ivh /root/init/jdk-8u172-linux-x64.rpm && rm -rf /root/init/jdk-8u172-linux-x64.rpm
+	echo "export JAVA_HOME=/usr/java/jdk1.8.0_172-amd64" >> /etc/profile
 	echo "CLASSPATH=\$JAVA_HOME/lib/dt.jar:\$JAVA_HOME/lib/tools.jar" >> /etc/profile
 	echo "PATH=\$JAVA_HOME/bin:\$PATH" >> /etc/profile
 	echo "export PATH JAVA_HOME CLASSPATH" >> /etc/profile
@@ -70,14 +49,12 @@ build_cpp_framework(){
 	echo "export PATH=\$PATH:\$MAVEN_HOME/bin" >> /etc/profile && source /etc/profile && mvn -v
 	rm -rf apache-maven-3.5.3-bin.tar.gz 
 	cd /usr/local/ && wget -c -t 0 https://dn-pd.qbox.me/resin-4.0.56.tar.gz && tar zxvf resin-4.0.56.tar.gz && mv resin-4.0.56 resin && rm -rf resin-4.0.56.tar.gz
-	echo "export RESIN_HOME=/usr/local/resin" >> /etc/profile
 	source /etc/profile && cd /root/Tars/java && mvn clean install && mvn clean install -f core/client.pom.xml && mvn clean install -f core/server.pom.xml
 	cd /root/Tars/web/ && source /etc/profile && mvn clean package
 	cp /root/Tars/build/conf/resin.xml /usr/local/resin/conf/
 	sed -i 's/servlet-class="com.caucho.servlets.FileServlet"\/>/servlet-class="com.caucho.servlets.FileServlet">\n\t<init>\n\t\t<character-encoding>utf-8<\/character-encoding>\n\t<\/init>\n<\/servlet>/g' /usr/local/resin/conf/app-default.xml
 	sed -i 's/<page-cache-max>1024<\/page-cache-max>/<page-cache-max>1024<\/page-cache-max>\n\t\t<character-encoding>utf-8<\/character-encoding>/g' /usr/local/resin/conf/app-default.xml
 	cp /root/Tars/web/target/tars.war /usr/local/resin/webapps/
-	mkdir -p /root/sql && cp -rf /root/Tars/cpp/framework/sql/* /root/sql/
 	cd /root/Tars/cpp/build/ && ./build.sh cleanall
 	yum clean all && rm -rf /var/cache/yum
 }
@@ -85,27 +62,30 @@ build_cpp_framework(){
 
 setup_database(){
 
-	echo "sql-mode=''" >> /etc/my.cnf
-
 	systemctl enable mysqld
-	systemctl restart mysqld
+	systemctl start mysqld
 
-	TmpDBPassword=$(cat /var/log/mysqld.log | grep "A temporary password is generated for" | awk '{print $NF}')
+/usr/bin/expect << EOF
+set timeout 30
+spawn mysql_secure_installation
+expect {
+    "enter for none" { send "\r"; exp_continue}
+    "Y/n" { send "Y\r" ; exp_continue}
+    "password:" { send "$DBPassword\r"; exp_continue}
+    "new password:" { send "$DBPassword\r"; exp_continue}
+    "Y/n" { send "Y\r" ; exp_continue}
+    eof { exit }
+}
+EOF
 
-	echo ${TmpDBPassword} > /root/TmpDBPassword.txt
-
-	mysql --connect-expired-password -h${DBIP} -P${DBPort} -u${DBUser} -p${TmpDBPassword} -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${DBPassword}';"
+	mysql -h${DBIP} -P${DBPort} -u${DBUser} -e "UPDATE mysql.user SET Password = PASSWORD('${DBPassword}') WHERE User = 'root'; FLUSH PRIVILEGES;"
 
 	echo "build cpp framework ...."
 	##Tars数据库环境初始化
-	mysql -h${DBIP} -P${DBPort} -u${DBUser} -p${DBPassword} -e "CREATE USER 'tars'@'%' IDENTIFIED WITH mysql_native_password BY '${DBTarsPass}';"
-	mysql -h${DBIP} -P${DBPort} -u${DBUser} -p${DBPassword} -e "GRANT ALL ON *.* TO 'tars'@'%' WITH GRANT OPTION;"
-	mysql -h${DBIP} -P${DBPort} -u${DBUser} -p${DBPassword} -e "CREATE USER 'tars'@'localhost' IDENTIFIED WITH mysql_native_password BY '${DBTarsPass}';"
-	mysql -h${DBIP} -P${DBPort} -u${DBUser} -p${DBPassword} -e "GRANT ALL ON *.* TO 'tars'@'localhost' WITH GRANT OPTION;"
-	mysql -h${DBIP} -P${DBPort} -u${DBUser} -p${DBPassword} -e "CREATE USER 'tars'@'${MachineName}' IDENTIFIED WITH mysql_native_password BY '${DBTarsPass}';"
-	mysql -h${DBIP} -P${DBPort} -u${DBUser} -p${DBPassword} -e "GRANT ALL ON *.* TO 'tars'@'${MachineName}' WITH GRANT OPTION;"
-	mysql -h${DBIP} -P${DBPort} -u${DBUser} -p${DBPassword} -e "CREATE USER 'tars'@'${MachineIp}' IDENTIFIED WITH mysql_native_password BY '${DBTarsPass}';"
-	mysql -h${DBIP} -P${DBPort} -u${DBUser} -p${DBPassword} -e "GRANT ALL ON *.* TO 'tars'@'${MachineIp}' WITH GRANT OPTION;"
+	mysql -h${DBIP} -P${DBPort} -u${DBUser} -p${DBPassword} -e "grant all on *.* to 'tars'@'%' identified by '${DBTarsPass}' with grant option;"
+	mysql -h${DBIP} -P${DBPort} -u${DBUser} -p${DBPassword} -e "grant all on *.* to 'tars'@'localhost' identified by '${DBTarsPass}' with grant option;"
+	mysql -h${DBIP} -P${DBPort} -u${DBUser} -p${DBPassword} -e "grant all on *.* to 'tars'@'${MachineName}' identified by '${DBTarsPass}' with grant option;"
+	mysql -h${DBIP} -P${DBPort} -u${DBUser} -p${DBPassword} -e "grant all on *.* to 'tars'@'${MachineIp}' identified by '${DBTarsPass}' with grant option;"
 	mysql -h${DBIP} -P${DBPort} -u${DBUser} -p${DBPassword} -e "flush privileges;"
 
 	sed -i "s/192.168.2.131/${MachineIp}/g" `grep 192.168.2.131 -rl /root/Tars/cpp/framework/sql/*`
@@ -134,7 +114,8 @@ install_base_services(){
 
 	echo "Get config files ...."
 
-	mkdir confs && cd confs
+	mkdir confs
+	cd confs
 	wget -c -t 0 https://raw.githubusercontent.com/tangramor/docker-tars/master/confs/tars.tarsnotify.config.conf
 	wget -c -t 0 https://raw.githubusercontent.com/tangramor/docker-tars/master/confs/tars.tarsstat.config.conf
 	wget -c -t 0 https://raw.githubusercontent.com/tangramor/docker-tars/master/confs/tars.tarsproperty.config.conf
@@ -250,22 +231,6 @@ build_web_mgr(){
 	systemctl disable firewalld
 }
 
-start_redis() {
-	sed -i "s/daemonize no/daemonize yes/g" /etc/redis.conf
-	#redis-server /etc/redis.conf
-	systemctl enable redis
-	systemctl start redis
-}
-
-start_apache() {
-	mkdir /data/web
-	echo "<?php phpinfo(); ?>" > /data/web/phpinfo.php
-	rm -rf /var/www/html
-	rm -f /etc/httpd/conf.d/welcome.conf
-	ln -s /data/web /var/www/html
-	systemctl enable httpd
-	systemctl start httpd
-}
 
 build_cpp_framework
 
@@ -274,7 +239,3 @@ setup_database
 install_base_services
 
 build_web_mgr
-
-start_redis
-
-start_apache
