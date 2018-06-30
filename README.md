@@ -74,6 +74,14 @@ DBPassword password
 另外安装脚本把构建成功的 tarslog.tgz、tarsnotify.tgz、tarsproperty.tgz、tarsqueryproperty.tgz、tarsquerystat.tgz 和 tarsstat.tgz 都放到了 `/data` 目录之下，脚本本身会自动安装这些服务。你也可以参考Tars官方文档的 [安装框架普通基础服务](https://github.com/Tencent/Tars/blob/master/Install.md#44-%E5%AE%89%E8%A3%85%E6%A1%86%E6%9E%B6%E6%99%AE%E9%80%9A%E5%9F%BA%E7%A1%80%E6%9C%8D%E5%8A%A1) 来了解这些服务。
 
 
+### 重启
+系统重启后，TARS服务需要手动启动：
+```
+cd /usr/local/app/tars
+./tars_install.sh
+nohup /usr/local/resin/bin/resin.sh console 1>/data/log/resin.log 2>&1 &
+```
+
 Docker镜像
 -----------
 
