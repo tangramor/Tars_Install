@@ -14,9 +14,9 @@
 约定
 -----
 
-脚本均在**CentOS7**环境上运行。
+脚本 `tars_install.sh` 和 `tars_install_php7_mysql8.sh` 在**CentOS7**环境上运行；脚本 `tars_install_debian_php7.sh` 在**Debian**和**Ubuntu**环境上运行。
 
-在修改完脚本预设变量后，使用 `chmod u+x` 赋予脚本运行权限，然后运行即可。
+以 **root** 用户登录，在修改完脚本预设变量后，使用 `chmod u+x` 赋予脚本运行权限，然后运行即可。
 
 
 MySQL
