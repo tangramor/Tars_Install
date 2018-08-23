@@ -14,10 +14,13 @@ INET_NAME=eth0
 MachineIp=$(ip addr | grep inet | grep ${INET_NAME} | awk '{print $2;}' | sed 's|/.*$||')
 MachineName=$(cat /etc/hosts | grep ${MachineIp} | awk '{print $2}')
 
-build_cpp_framework(){
-	apt install -y build-essential cmake wget mariadb-server libmariadbclient-dev libmariadbclient18 unzip iproute flex bison expect libncurses5-dev zlib1g-dev ca-certificates vim rsync locales apache2 composer php7.0 php7.0-cli php7.0-dev php7.0-mcrypt php7.0-gd php7.0-curl php7.0-mysql php7.0-zip php7.0-fileinfo php7.0-mbstring php-redis redis-server
+install_software(){
+	apt install -y build-essential cmake wget mariadb-server libmariadbclient-dev libmariadbclient18 unzip iproute flex bison expect libncurses5-dev libprotobuf-dev libprotoc-dev zlib1g-dev ca-certificates vim rsync locales apache2 composer php7.0 php7.0-cli php7.0-dev php7.0-mcrypt php7.0-gd php7.0-curl php7.0-mysql php7.0-zip php7.0-fileinfo php7.0-mbstring php-redis redis-server
 	echo "zh_CN.UTF-8 UTF-8" >> /etc/locale.gen && locale-gen && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 	echo 'LC_ALL=zh_CN.UTF-8' >> /etc/environment && localedef -c -f UTF-8 -i zh_CN zh_CN.UTF-8
+}
+
+build_cpp_framework(){
 	# 获取最新TARS源码
 	cd /root && wget -c -t 0 https://github.com/Tencent/Tars/archive/master.zip -O master.zip
 	unzip -a master.zip && mv Tars-master Tars && rm -f /root/master.zip
@@ -39,6 +42,9 @@ build_cpp_framework(){
 	mkdir -p /usr/local/app/tars/ && cp /root/Tars/cpp/build/framework.tgz /usr/local/app/tars/ && cp /root/Tars/cpp/build/t*.tgz /root/
 	cd /usr/local/app/tars/ && tar xzfv framework.tgz && rm -rf framework.tgz
 	mkdir -p /usr/local/app/patchs/tars.upload
+}
+
+build_php_tars(){
 	cd /root/Tars/php/tars-extension/ && phpize --clean && phpize
 	./configure --enable-phptars --with-php-config=/usr/bin/php-config && make && make install && phpize --clean
 	echo "extension=phptars.so" > /etc/php/7.0/mods-available/phptars.ini
@@ -52,19 +58,22 @@ build_cpp_framework(){
 	ln -s /etc/php/7.0/mods-available/swoole.ini /etc/php/7.0/apache2/conf.d/20-swoole.ini
 	ln -s /etc/php/7.0/mods-available/swoole.ini /etc/php/7.0/cli/conf.d/20-swoole.ini
 	cd /root && rm -rf v2.2.0.tar.gz swoole-src-2.2.0
+}
+
+build_java_framework(){
 	# 获取并安装JDK
 	mkdir -p /root/init && cd /root/init/
-	wget -c -t 0 --header "Cookie: oraclelicense=accept" -c --no-check-certificate http://download.oracle.com/otn-pub/java/jdk/10.0.1+10/fb4372174a714e6b8c52526dc134031e/jdk-10.0.1_linux-x64_bin.tar.gz
-	tar zxf /root/init/jdk-10.0.1_linux-x64_bin.tar.gz && rm -rf /root/init/jdk-10.0.1_linux-x64_bin.tar.gz
-	mkdir /usr/java && mv /root/init/jdk-10.0.1 /usr/java
-	echo "export JAVA_HOME=/usr/java/jdk-10.0.1" >> /etc/profile
+	wget -c -t 0 --header "Cookie: oraclelicense=accept" -c --no-check-certificate http://download.oracle.com/otn-pub/java/jdk/10.0.2+13/19aef61b38124481863b1413dce1855f/jdk-10.0.2_linux-x64_bin.tar.gz
+	tar zxf /root/init/jdk-10.0.2_linux-x64_bin.tar.gz && rm -rf /root/init/jdk-10.0.2_linux-x64_bin.tar.gz
+	mkdir /usr/java && mv /root/init/jdk-10.0.2 /usr/java
+	echo "export JAVA_HOME=/usr/java/jdk-10.0.2" >> /etc/profile
 	echo "CLASSPATH=\$JAVA_HOME/lib/dt.jar:\$JAVA_HOME/lib/tools.jar" >> /etc/profile
 	echo "PATH=\$JAVA_HOME/bin:\$PATH" >> /etc/profile
 	echo "export PATH JAVA_HOME CLASSPATH" >> /etc/profile
-	cd /usr/local/ && wget -c -t 0 https://mirrors.tuna.tsinghua.edu.cn/apache/maven/maven-3/3.5.3/binaries/apache-maven-3.5.3-bin.tar.gz
-	tar zxvf apache-maven-3.5.3-bin.tar.gz && echo "export MAVEN_HOME=/usr/local/apache-maven-3.5.3/" >> /etc/profile
+	cd /usr/local/ && wget -c -t 0 http://mirror.bit.edu.cn/apache/maven/maven-3/3.5.4/binaries/apache-maven-3.5.4-bin.tar.gz
+	tar zxvf apache-maven-3.5.4-bin.tar.gz && echo "export MAVEN_HOME=/usr/local/apache-maven-3.5.4/" >> /etc/profile
 	echo "export PATH=\$PATH:\$MAVEN_HOME/bin" >> /etc/profile && . /etc/profile && mvn -v
-	rm -rf apache-maven-3.5.3-bin.tar.gz 
+	rm -rf apache-maven-3.5.4-bin.tar.gz 
 	cd /usr/local/ && wget -c -t 0 http://caucho.com/download/resin-4.0.56.tar.gz && tar zxvf resin-4.0.56.tar.gz && mv resin-4.0.56 resin && rm -rf resin-4.0.56.tar.gz
 	cd /root/Tars/java && mvn clean install && mvn clean install -f core/client.pom.xml && mvn clean install -f core/server.pom.xml
 	cd /root/Tars/web/ && mvn clean package
@@ -72,6 +81,9 @@ build_cpp_framework(){
 	sed -i 's/servlet-class="com.caucho.servlets.FileServlet"\/>/servlet-class="com.caucho.servlets.FileServlet">\n\t<init>\n\t\t<character-encoding>utf-8<\/character-encoding>\n\t<\/init>\n<\/servlet>/g' /usr/local/resin/conf/app-default.xml
 	sed -i 's/<page-cache-max>1024<\/page-cache-max>/<page-cache-max>1024<\/page-cache-max>\n\t\t<character-encoding>utf-8<\/character-encoding>/g' /usr/local/resin/conf/app-default.xml
 	cp /root/Tars/web/target/tars.war /usr/local/resin/webapps/
+}
+
+clean_build(){
 	cd /root/Tars/cpp/build/ && ./build.sh cleanall
 	apt-get -y autoclean && apt-get -y autoremove
 }
@@ -244,6 +256,7 @@ build_web_mgr(){
 	cd ..
 	rm -rf tars
 
+	mkdir -p /data/log
 	nohup /usr/local/resin/bin/resin.sh console 1>/data/log/resin.log 2>&1 &
 
 	#firewall-cmd --zone=public --add-port=80/tcp --permanent
@@ -252,8 +265,15 @@ build_web_mgr(){
 	# systemctl disable firewalld
 }
 
+install_software
 
 build_cpp_framework
+
+build_php_tars
+
+build_java_framework
+
+clean_build
 
 setup_database
 

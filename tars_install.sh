@@ -14,14 +14,17 @@ INET_NAME=eth0
 MachineIp=$(ip addr | grep inet | grep ${INET_NAME} | awk '{print $2;}' | sed 's|/.*$||')
 MachineName=$(cat /etc/hosts | grep ${MachineIp} | awk '{print $2}')
 
-build_cpp_framework(){
+install_software(){
 	yum -y install https://repo.mysql.com/mysql-community-release-el7-7.noarch.rpm
 	yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 	yum -y install http://rpms.remirepo.net/enterprise/remi-release-7.rpm
 	yum -y install yum-utils
-	yum install -y git gcc gcc-c++ make wget cmake mysql-server mysql-devel unzip iproute which glibc-devel flex bison ncurses-devel zlib-devel kde-l10n-Chinese glibc-common expect
+	yum install -y git gcc gcc-c++ make wget cmake mysql-server mysql-devel unzip iproute which glibc-devel flex bison ncurses-devel protobuf-devel zlib-devel kde-l10n-Chinese glibc-common expect
 	ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 	localedef -c -f UTF-8 -i zh_CN zh_CN.utf8
+}
+
+build_cpp_framework(){
 	cd /root && wget -c -t 0 https://github.com/Tencent/Tars/archive/master.zip -O master.zip
 	unzip -a master.zip && mv Tars-master Tars && rm -f /root/master.zip
 	mkdir -p /usr/local/mysql && ln -s /usr/lib64/mysql /usr/local/mysql/lib && ln -s /usr/include/mysql /usr/local/mysql/include && echo "/usr/local/mysql/lib/" >> /etc/ld.so.conf && ldconfig
@@ -36,6 +39,9 @@ build_cpp_framework(){
 	mkdir -p /usr/local/app/tars/ && cp /root/Tars/cpp/build/framework.tgz /usr/local/app/tars/ && cp /root/Tars/cpp/build/t*.tgz /root/
 	cd /usr/local/app/tars/ && tar xzfv framework.tgz && rm -rf framework.tgz
 	mkdir -p /usr/local/app/patchs/tars.upload
+}
+
+build_java_framework(){
 	mkdir -p /root/init && cd /root/init/
 	wget -c -t 0 --header "Cookie: oraclelicense=accept" -c --no-check-certificate http://download.oracle.com/otn-pub/java/jdk/8u172-b11/a58eab1ec242421181065cdc37240b08/jdk-8u172-linux-x64.rpm
 	rpm -ivh /root/init/jdk-8u172-linux-x64.rpm && rm -rf /root/init/jdk-8u172-linux-x64.rpm
@@ -55,6 +61,9 @@ build_cpp_framework(){
 	sed -i 's/servlet-class="com.caucho.servlets.FileServlet"\/>/servlet-class="com.caucho.servlets.FileServlet">\n\t<init>\n\t\t<character-encoding>utf-8<\/character-encoding>\n\t<\/init>\n<\/servlet>/g' /usr/local/resin/conf/app-default.xml
 	sed -i 's/<page-cache-max>1024<\/page-cache-max>/<page-cache-max>1024<\/page-cache-max>\n\t\t<character-encoding>utf-8<\/character-encoding>/g' /usr/local/resin/conf/app-default.xml
 	cp /root/Tars/web/target/tars.war /usr/local/resin/webapps/
+}
+
+clean_build(){
 	cd /root/Tars/cpp/build/ && ./build.sh cleanall
 	yum clean all && rm -rf /var/cache/yum
 }
@@ -229,8 +238,13 @@ build_web_mgr(){
 	systemctl disable firewalld
 }
 
+install_software
 
 build_cpp_framework
+
+build_java_framework
+
+clean_build
 
 setup_database
 
